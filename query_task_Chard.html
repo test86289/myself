@@ -1,0 +1,447 @@
+<!DOCTYPE html> <!-- Declares the document to be HTML5 -->
+<html> <!-- Beginning of the HTML document -->
+
+<head> <!-- Beginning of the head section which contains meta information and other resources for the page -->
+  <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content = "initial-scale=1, maximum-scale=1, user-scalable=no"/>
+    <title>
+    Ramos_Lab7
+    </title>
+    <!--Theis links to the arcgis stylesheet for js -->
+    <link rel = "stylesheet" href = "https://js.arcgis.com/4.21/esri/themes/light/main.css"/>
+    <!-- This links to the arcgis external js code  -->
+    <script src = "https://js.arcgis.com/4.21/"> </script>
+
+  <!--external fonts-->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Coiny&family=Comfortaa:wght@300;400;500&family=Sono:wght@400;500;700&family=Space+Mono&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Coiny&family=Comfortaa:wght@300;400;500&family=Montserrat+Alternates:wght@200;300;400&family=Sono:wght@400;500;700&family=Space+Mono&display=swap" rel="stylesheet">
+  <!------->
+
+
+
+<!----------------------------------------------------------------------------------------------->
+    <!--this css style tag sets the properties for the webpage elements, not including the esri webmap elements -->
+    <style>
+
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+
+        height: calc(100vh - 100px); /*my nav bar div is 180px, therefore I want the map div to be 100% viewport height minus 180 pixels regardless of the screen size*/
+        width: 100%;
+      }
+
+      /*added css styling for the div container holding the query*/
+      #optionsDiv{
+        background-color: dimgray;
+        color: white;
+        padding: 10px;
+        width: 350px;
+        /*having trouble with position of the query div, using this positioning override to move it around a bit */
+        position: absolute;
+        bottom: 50px;
+        right:30px;
+      }
+
+      /*formatted the styling for the results popup*/
+      .esri-popup .esri-popup-header .esri-title{
+        font-size: 18px;
+        font-weight: bolder;
+      }
+
+      .esri-popup .esri-popup-body .esri-popup-content{
+        font-size: 14px;
+      }
+
+
+      /*-----------------------NAV BAR--------------------------------------------*/
+
+
+
+      /* Add a black background color to the top navigation */
+      .topnav {
+          background-color: #fff;
+          overflow: hidden;
+          margin-top: 0;
+          border-bottom: solid 3px #350242;
+          font-family: 'Comfortaa';
+        }
+
+        /* Style the links inside the navigation bar */
+        .topnav a {
+          float: left;
+          display: block;
+          color: #333;
+          text-align: center;
+          padding: 39px 55px;
+          text-decoration: none;
+          font-size: 17px;
+          font-family: inherit;
+
+
+        }
+
+        /* Add an active class to highlight the current page */
+        .active {
+          background-image: linear-gradient(#FFF, #350242); /*just trying to be a little over the top with the graphical design*/
+          color: white;
+        }
+
+
+
+        /* Dropdown container - needed to position the dropdown content */
+        .dropdown {
+          float: left;
+          overflow: hidden;
+        }
+
+
+        /* Style the dropdown button to fit inside the topnav */
+        .dropdown .dropbtn {
+          font-size: 17px;
+          border: none;
+          outline: none;
+          color: #333;
+          padding: 39px 55px;
+          background-color: inherit;
+          font-family: inherit;
+          margin: 0;
+
+        }
+
+        /* Style the dropdown content (hidden by default) */
+        .dropdown-content {
+          display: none;
+          position: absolute;
+          background-color: #f9f9f9;
+          /*min-width: 160px;*/
+          box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+          z-index: 1;
+        }
+
+        /* Style the links inside the dropdown */
+        .dropdown-content a {
+          float: none;
+          color: black;
+          padding: 12px 16px;
+          text-decoration: none;
+          display: block;
+          text-align: left;
+        }
+
+        /* Add a dark background on topnav links and the dropdown button on hover */
+        .topnav a:hover, .dropdown:hover .dropbtn {
+          background-color: #555;
+          color: white;
+        }
+
+        /* Add a grey background to dropdown links on hover */
+        .dropdown-content a:hover {
+          background-color: #ddd;
+          color: black;
+        }
+
+        /* Show the dropdown menu when the user moves the mouse over the dropdown button */
+        .dropdown:hover .dropdown-content {
+          display: block;
+        }
+
+        #logo {
+          font-family: 'Montserrat Alternates'; /*Comfortaa'*/
+          font-weight: 400;
+          float: left;
+          display: block;
+          color: #fff;
+          text-align: center;
+          padding: 34px 55px;
+          text-decoration: none;
+          font-size: 24px;
+          margin-top: 0;
+          margin-right: 0;
+          margin-bottom: 0;
+          margin-left: 0;
+
+        }
+
+    </style>
+    <!-- Removes padding -->
+    <!-- Removes margin -->
+    <!-- Sets height to 100% of the viewport -->
+    <!-- Sets width to 100% of the viewport -->
+
+    <!-- JavaScript code to initialize and display the map -->
+    <script>
+        // Using the require function from the ArcGIS API to load modules
+        require(["esri/Map", "esri/views/MapView", "esri/layers/TileLayer", "esri/layers/FeatureLayer", "esri/widgets/Legend","esri/widgets/Search", "esri/layers/GraphicsLayer", "esri/tasks/QueryTask", "esri/tasks/support/Query", "dojo/_base/array", "dojo/dom", "dojo/on", "dojo/domReady!",],
+         (Map, MapView, TileLayer, MapImageLayer, Legend, Search, GraphicsLayer, QueryTask, Query, arrayUtils, dom, on) => {
+
+            // Renderer for the cities
+            var CitiesRenderer = { type: "simple",
+            symbol: {
+              type: "simple-marker",
+              size: 3,
+              color: "yellow",
+              style: "circle",
+              outline:{
+                 width: 1,
+                 color: "yellow"
+              }
+            },
+            label: "Cities"
+          };
+          // MapImageLayer for cities
+          var CitiesLayer = new MapImageLayer({
+            url:"https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer",
+            sublayers: [
+              {
+                id: 0,
+                renderer: CitiesRenderer,
+                opacity: 0.4
+              }
+            ]
+          });
+
+          // Create a tile layer cached map service for world transportation for quick display
+          const eduLayer = new FeatureLayer({
+            url: "https://services.arcgis.com/V6ZHFr6zdgNZuVG0/ArcGIS/rest/services/Enriched%20USA%20Counties%20-%20Education/FeatureServer/0",
+            renderer: renderer,//set the renderer to the one created above
+            title: "Low Education in the U.S. ",//se the title for the feature layer
+            popupTemplate: {//create a new popup template, which will also display as the legend
+              // autocasts as new PopupTemplate()
+              title: "{COUNTY}, {STATE}",//use the {FIELDNAME} syntax to pull data from the feature service
+              content:
+                "{SOMEHS_CY} of {POPULATION} people have only HS education. Mean: 6%",//set the text that will be displayed in the popup and legend
+              fieldInfos: [//set the fields to be used
+                {
+                  fieldName: "SOMEHS_CY",
+                  format: {
+                    digitSeparator: true,
+                    places: 0
+                  }
+                },
+                {
+                  fieldName: "POPULATION",
+                  format: {
+                    digitSeparator: true,
+                    places: 0
+                  }
+                }
+              ]
+            }
+          });
+
+          // Create a map with the oceans basemap and add the transportation layer
+          const map = new Map({
+              basemap: "gray-vector",
+              layers: [eduLayer]
+          });
+
+          // create map view with specified zoom level and center
+          const view = new MapView({
+              container: "viewDiv", // Specifies the container element's ID
+              map: map,             // Specifies the map object to use
+              center: [-98, 38],
+            zoom: 4 // Initial center coordinates (longitude, latitude)
+          });
+
+          view.ui.add(
+          new Search({
+            view: view
+          }),
+          "top-left"
+        );
+
+
+          //Add the previously formatted legend widget to the top right of the view
+          view.ui.add(
+            new Legend({
+              view: view
+            }),
+            "top-right"
+          );
+
+
+
+
+
+          var popUrl ="https://services.arcgis.com/V6ZHFr6zdgNZuVG0/ArcGIS/rest/services/Enriched%20USA%20Counties%20-%20Education/FeatureServer/0";
+
+          //this step creates teh popup template for the cities layer, which will only display as a result of the query widget
+          var popupTemplate = { title: "{COUNTY}, " + "{STATE}",
+            //fieldInfos creates a variable that holds the data that will be retured on the fly by the query
+            //First we create a field called populaiton, with the label of population, and tell the popup to format it
+            //with a digit seperator
+            fieldInfos:[{
+              fieldName: "POPULATION",
+                label: "Total Population",
+                format: {
+                places: 0,
+                digitSeperator: true
+                }},
+                {
+             //as above, we tell the popup to create a variable to store the data from the "Household" attribute and to format that
+             //variable with a digit sepaerator.
+              fieldName: "SOMEHS_CY",
+                label: "Population with only some HS",
+                format: {
+                places: 0,
+                digitSeperator: true
+                }}
+            ],
+            //finally we create the content for the popup using the fields we created above as well as other fields that exist within the cities feature layer
+            //we use the {fieldName} operator to return the population, number of households, AND the lat and lon even though we didn't style those or define them any differently
+            content: "<b>Population:" + "</b> {POPULATION} " + "<br><b>Population with only some HS:</b> {SOMEHS_CY}" + "<br><b>{SOMEHS_CY}/{POPULATION}*100</b>{Latitude}"};
+
+          //create a graphics layer called resultsLayer to later add things to and display on the map view
+          var resultsLayer = new GraphicsLayer();
+
+          //using the QueryTask function which we loaded, create a new query task called qTask that pulls info from the url we also specified earlier
+          var qTask = new QueryTask({ url: popUrl});
+
+          //creating a new query with the Query function which we loaded, and specify that the query
+          //should return the geometry, which will allow us to use the {longitude} and {latitude} variables
+          //in the popup content, and specify that the query will return all fields, which is what the * operator means in SQL
+          var params = new Query({ returnGeometry: true, outFields: ["*"]});
+
+
+          view.when(function(){
+            view.ui.add("optionsDiv", "bottom-right");
+            on(document.getElementById("doBtn"), "click", doQuery);
+          });
+
+          //these 3 variables get the user input
+          //this is just setting the refernce to the html select element with id="attSelect", returned by the dom.byId function, to the variable attributeName
+          var attributeName = document.getElementById("attSelect");
+          //this is just setting the refernce to the html select element with id="signSelect", returned by the dom.byId function, to the variable expressionSign
+          var expressionSign = document.getElementById("signSelect");
+          //this is just setting the refernce to the html select element with id="valSelect", returned by the dom.byId function, to the variable value
+          var value = document.getElementById("valSelect");
+          //----------------Create the main functions------------------
+
+          //this function is what runs when the do query button is clicked
+          function doQuery(){
+            //first the previous results are removed, resetting the results
+            resultsLayer.removeAll();
+            //this line sets the inputs to the query function which we stored in the variable params above, the inputs are set based on the 3 variables we set with the dom.byID function above, i.e. the user input
+            params.where = attributeName.value + expressionSign.value + value.value;
+            //this line runs the Query Task function which we loaded and set to the qTask variable,
+            //it runs using the Query function as input, which we loaded and set to the variable params
+            //and later set the properties of based on user input which we got with dom.byId
+            //and then runs either the getResults funciton OR THE promiseRejected function, based on whether or not
+            //the getResults function throws an error.  If it does, .catch will catch the error and run the promise Rejected function
+            //both of which are defined below
+            qTask.execute(params).then(getResults).catch(promiseRejected);
+          }
+
+
+          //the QueryTask function (qTask) will attempt to run this getReslts function using the parameters we set from the user input
+          function getResults(response){
+            //based on the user input which is passed to the getResults function from the qTask function with the argument named response,
+            //create an array of the response features, and each features attribute values based on the popup template object we created above
+            //return the popup table output line (called feature here) for each feature passed by the query task
+            var popResults = arrayUtils.map(response.features,
+            function(feature){
+              feature.popupTemplate = popupTemplate;
+              return feature;
+            });
+
+            //finally, add to the results layer, which should be empty because we used resultsLayer.removeAll() above
+            //the array that stores the results which we named popResults and which was returned by the getResults function above
+            resultsLayer.addMany(popResults);
+
+            //go to the location of the results and open the popup  with the featrues set to the popResults and other options
+            view.goTo(popResults).then(function(){
+              view.popup.open({
+              features: popResults,
+              featureMenuOpen: true,
+              updateLocationEnabled: true
+            });
+            });
+
+            //last, return the number of results found by the query to the printResults html object using
+            //the .length method on the popResults array
+            document.getElementById("printResults").innerHTML = popResults.length + " results found!";
+          };
+
+          //If the qTask function throws an error based on the parameters we set, this function will run
+          //instead of the getResults function and the error message will be printed to the console
+          function promiseRejected(error){
+            console.error("Promise rejected: ", error.message," Parameter values: ",attributeName.value, expressionSign.value, value.value);
+          }
+
+
+
+
+        });
+    </script>
+</head> <!-- End of the head section -->
+
+<body> <!-- Beginning of the body section which contains the content of the page -->
+
+  <div class="topnav" id="myTopnav">
+      <div id="logo" class="active">Web Mappy</div>
+      <div class="dropdown">
+      <button class="dropbtn">Maps
+          <i class="fa fa-caret-down"></i>
+      </button>
+      <div class="dropdown-content">
+          <a href="https://pages.git.txstate.edu/cgr50/cgr50.github.io/simple_mapping.html" target="_blank">Simple Mapping</a>
+          <a href="https://pages.git.txstate.edu/cgr50/cgr50.github.io/tile_layer.html" target="_blank">Tile Layers</a>
+          <a href="https://pages.git.txstate.edu/cgr50/cgr50.github.io/dynamic_layers.html" target="_blank">Dynamic Layers</a>
+          <a href="https://pages.git.txstate.edu/cgr50/cgr50.github.io/on_event.html" target="_blank">On Event</a>
+          <a href="https://pages.git.txstate.edu/cgr50/cgr50.github.io/basemap_gallery.html" target="_blank">Basemap Gallery</a>
+          <a href="https://pages.git.txstate.edu/cgr50/cgr50.github.io/query_task.html" target="_blank">Query Task</a>
+      </div>
+      </div>
+      <a href="https://pages.git.txstate.edu/cgr50/cgr50.github.io/lab7_homework.html">Home</a>
+      <a href="https://pages.git.txstate.edu/cgr50/cgr50.github.io/" target="_blank">Contact</a>
+      <div class="dropdown">
+        <!-- <button class="dropbtn">About Us
+          <i class="fa fa-caret-down"></i>
+        </button>
+       <div class="dropdown-content">
+          <a href="https://pages.git.txstate.edu/cgr50/cgr50.github.io/" target="_blank">Chad Ramos</a>
+          <a href="https://pages.git.txstate.edu/hgx4/hgx4.github.io/" target="_blank">Brodde Kjosa</a>
+          <a href="https://pages.git.txstate.edu/bek47/bek47.github.io/" target="_blank">Jasmine Marroquin</a>
+       </div> -->
+      </div>
+  </div>
+
+    <div id="viewDiv"></div> <!-- A div container where the map will be rendered -->
+    <div class="esri-ui-bottom-right esri-ui-corner"><div class="esri-widget esri-component" id="optionsDiv">
+      <h2>Counties with low education</h2>
+      <select class="esri-widget" id="attSelect">
+        <option value="POPULATION">Total Population</option>
+        <option value="SOMEHS_CY" selected="">Populaiton with only some HS</option>
+      </select>
+      <select class="esri-widget" id="signSelect">
+        <option value=">">is greater than</option>
+        <option value="<">is less than</option>
+      </select>
+      <select class="esri-widget" id="valSelect">
+        <option value="10000">500</option>
+        <option value="50000">1,000</option>
+        <option value="100000">10,000</option>
+        <option value="150000">50,000</option>
+        <option value="200000">100,000</option>
+      </select>
+      <br>
+      <br>
+      <button class="esri-widget" id="doBtn">Do Query</button>
+      <br>
+      <p><span id="printResults"></span></p>
+    </div></div>
+    </div>
+
+</body> <!-- End of the body section -->
+
+</html> <!-- End of the HTML document -->
